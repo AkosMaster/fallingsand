@@ -1,0 +1,12 @@
+<script id="vertexShader" type="x-shader/x-vertex">
+  varying vec2 vUvs;
+
+void main() {
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    vUvs = uv;
+}
+</script>
+
+</script>
+<script src="three.js"></script>
+<script type="module" src="main.js"></script>
