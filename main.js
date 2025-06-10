@@ -1,7 +1,7 @@
 //import * as THREE from "https://cdn.skypack.dev/three@0.146.0";
 
 async function downloadFile(file) {
-  let response = await fetch(file);
+  let response = await fetch(file, {cache: "no-store"});
     
   if(response.status != 200) {
     throw new Error("Server Error");
@@ -25,8 +25,8 @@ const bufferScene = new THREE.Scene();
  * Sizes
  */
 const sizes = {
-  width: 1920/3,
-  height: 1080/3
+  width: 1920/8,
+  height: 1080/8
 };
 
 /**
@@ -91,6 +91,15 @@ const bufferMaterial = new THREE.ShaderMaterial({
         tick: {
           value: 0
         },
+        brushType: {
+          value: new THREE.Vector4(0.0,0.0,0.0,0.0)
+        },
+        brushPos: {
+          value: new THREE.Vector2(0.0,0.0)
+        },
+        brushScale: {
+          value: 0
+        }
     },
     vertexShader: document.getElementById("vertexShader").textContent,
     fragmentShader: await downloadFile("common.glsl") + await downloadFile("computeShader.glsl")
@@ -103,6 +112,9 @@ const quadMaterial = new THREE.ShaderMaterial({
     uTexture: { value: null },
     uResolution: {
       value: resolution
+    },
+    screenSize: {
+      value: new THREE.Vector2(window.innerWidth, window.innerHeight)
     }
   },
   vertexShader: document.getElementById("vertexShader").textContent,
@@ -128,7 +140,7 @@ canvasElement.style.left = "0px";
 canvasElement.style.position="absolute";
 
 const onWindowResize = () => {
-    // Update sizes
+    /*// Update sizes
     sizes.width = window.innerWidth
     sizes.height = window.innerHeight
 
@@ -137,12 +149,13 @@ const onWindowResize = () => {
     camera.updateProjectionMatrix()
 
     // Update renderer
-    renderer.setSize(sizes.width, sizes.height)
+    //renderer.setSize(sizes.width, sizes.height)
+    renderer.setSize(window.innerWidth, window.innerHeight)
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
     //update uniforms
     quadMaterial.uniforms.uResolution.value.x = sizes.width
-    quadMaterial.uniforms.uResolution.value.y = sizes.height
+    quadMaterial.uniforms.uResolution.value.y = sizes.height*/
 }
 
 window.addEventListener('resize', onWindowResize)
@@ -158,48 +171,41 @@ const camera = new THREE.OrthographicCamera(- 1, 1, 1, - 1, 0, 1);
  * Animate
  */
 
-function randomIntFromInterval(min, max) { // min and max included 
-  return Math.floor(Math.random() * (max - min + 1) + min);
-}
-
-const updateDirections = [
-  new THREE.Vector2(1,0),
-  new THREE.Vector2(1,1),
-  new THREE.Vector2(0,1),
-  new THREE.Vector2(-1,1),
-  new THREE.Vector2(-1,0),
-  new THREE.Vector2(-1,-1),
-  new THREE.Vector2(0,-1),
-  new THREE.Vector2(1,-1),
-]
 var tickCount = 0;
 
 const tick = () => {
-    tickCount++;
-   // Explicitly set renderBufferA as the framebuffer to render to
-   //the output of this rendering pass will be stored in the texture associated with renderBufferA
-    renderer.setRenderTarget(renderBufferA)
-    // This will contain the ping-pong accumulated texture
-    renderer.render(bufferScene, camera)
     
-    mesh.material.uniforms.uTexture.value = renderBufferA.texture;
-    
-    //This will set the default framebuffer (i.e. the screen) back to being the output
-    renderer.setRenderTarget(null)
-  //Render to screen
-    renderer.render(scene, camera);
-    
-    // Ping-pong the framebuffers by swapping them
-    // at the end of each frame render
-    //Now prepare for the next cycle by swapping renderBufferA and renderBufferB
-    //so that the previous frame's *output* becomes the next frame's *input*
-    const temp = renderBufferA
-    renderBufferA = renderBufferB
-    renderBufferB = temp
-    bufferMaterial.uniforms.uTexture.value = renderBufferB.texture;
-    bufferMaterial.uniforms.tick.value = tickCount;
 
+    var iters = 4;
+    for (var i = 0; i < iters; i++) {
+      tickCount++;
+      // Explicitly set renderBufferA as the framebuffer to render to
+      //the output of this rendering pass will be stored in the texture associated with renderBufferA
+      renderer.setRenderTarget(renderBufferA)
+      // This will contain the ping-pong accumulated texture
+      renderer.render(bufferScene, camera)
     
+      mesh.material.uniforms.uTexture.value = renderBufferA.texture;
+    
+      if (i == iters-1) {
+        //This will set the default framebuffer (i.e. the screen) back to being the output
+        renderer.setRenderTarget(null)
+        //Render to screen
+        renderer.render(scene, camera);
+        console.log("ren")
+      }
+
+      // Ping-pong the framebuffers by swapping them
+      // at the end of each frame render
+      //Now prepare for the next cycle by swapping renderBufferA and renderBufferB
+      //so that the previous frame's *output* becomes the next frame's *input*
+      const temp = renderBufferA
+      renderBufferA = renderBufferB
+      renderBufferB = temp
+      bufferMaterial.uniforms.uTexture.value = renderBufferB.texture;
+      bufferMaterial.uniforms.tick.value = tickCount;
+    
+    }
     //console.log(bufferMaterial.uniforms)
 
     // Call tick again on the next frame
@@ -211,7 +217,40 @@ const tick = () => {
 }
 
 tick()
-//setInterval(tick, 10);
+
+/* CONTROLS */
+document.addEventListener('mousemove', function(event) {
+    bufferMaterial.uniforms.brushPos.value = new THREE.Vector2(event.clientX * sizes.width/window.innerWidth,sizes.height - event.clientY*sizes.height/window.innerHeight);
+});
+
+var brushScale = 10;
+renderer.domElement.addEventListener('mousedown', function(event) {
+    bufferMaterial.uniforms.brushScale.value = brushScale;
+});
+
+renderer.domElement.addEventListener('mouseup', function(event) {
+    bufferMaterial.uniforms.brushScale.value = 0;
+});
+
+document.addEventListener('keydown', function(event) {
+  console.log(event.key);
+  switch(event.key) {
+    case '+':
+      brushScale++;
+      if (bufferMaterial.uniforms.brushScale.value > 0) {
+        bufferMaterial.uniforms.brushScale.value = brushScale;
+      }
+      break;
+    case '-':
+      if (brushScale > 1) {
+        brushScale--;
+        if (bufferMaterial.uniforms.brushScale.value > 0) {
+          bufferMaterial.uniforms.brushScale.value = brushScale;
+        }
+      }
+      break;
+  }
+});
 
 /**
  * CREATE RANDOM NOISY TEXTURE
@@ -226,7 +265,7 @@ function createDataTexture() {
   for (var i = 0; i < size; i++) {
     var stride = i * 4;
 
-    var rand = Math.random();
+    var rand = 1//Math.random();
     if (rand < 0.5) {
       data[stride] = 255*0.5;
       data[stride + 1] = 0;
@@ -269,3 +308,47 @@ function createDataTexture() {
   texture.needsUpdate = true;
   return texture;
 }
+
+/* ELEMENT SELECTOR */
+
+var elements = [
+  new THREE.Vector4(0.0,0.0,0.0,0.0), //AIR
+  new THREE.Vector4(0.5,0.0,0.0,0.1), //SAND
+  new THREE.Vector4(0.25,0.0,0.0,0.2), //WATER
+  new THREE.Vector4(1.0,0.0,0.0,0.3), //WOOD
+  new THREE.Vector4(0.1,0.0,0.0,0.4), //SMOKE
+  new THREE.Vector4(0.09,0.0,0.3,0.5), //FLAME
+]
+
+var elementColors = [
+  new THREE.Vector4(0.0,0.0,0.0,0.0), //AIR
+  new THREE.Vector4(194.0,178.0,128.0, 255.0), //SAND
+  new THREE.Vector4(0.0,0.0,128.0, 255.0), //WATER
+  new THREE.Vector4(139.0,90.0,43.0, 255.0), //WOOD
+  new THREE.Vector4(100.0,100.0,100.0, 255.0), //SMOKE
+  new THREE.Vector4(160.0,0.0,0.0, 255.0), //FLAME
+]
+
+for (var i = 0; i < elements.length; i++) {
+  var vec = elementColors[i];
+  
+  var btn = document.createElement("BUTTON"); 
+  btn.style.position="absolute";
+  btn.style.width = "50px";
+  btn.style.height = "50px";
+  btn.style.left = (15 + 60*i).toString() + "px";
+  btn.style.zIndex = "1";
+  btn.style.background = "rgb(" + (vec.x).toString() + ", " + (vec.y).toString() + ", " + (vec.z).toString() + ")";
+
+  btn.element = elements[i];
+
+  btn.onclick = function () {
+    console.log(bufferMaterial.uniforms.brushType.value)
+    console.log(this.element)
+    bufferMaterial.uniforms.brushType.value = this.element;
+  }
+
+  document.body.appendChild(btn);
+}
+
+

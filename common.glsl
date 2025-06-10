@@ -1,4 +1,9 @@
 
+  
+  precision mediump float;
+  uniform vec2 uResolution;
+  uniform sampler2D uTexture; 
+
   #define EPSILON 0.05
 
   #define AIR    0.0
@@ -12,6 +17,8 @@
     return abs(x - y) < EPSILON;
   }
 
+  
+
   #define AIR_VEC vec4(0.00, 0.0, 0.0, AIR)
-  #define FLAME_VEC vec4(0.09, 0.0, 1.0, FLAME)
+  #define FLAME_VEC vec4(0.09, 0.0, 0.3, FLAME)
   #define SMOKE_VEC vec4(0.1, 0.0, 0.0, SMOKE)
