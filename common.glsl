@@ -12,6 +12,8 @@
   #define WOOD   0.3
   #define SMOKE  0.4
   #define FLAME  0.5
+  #define ACID   0.6
+  #define IRON   0.7
 
   bool near(float x, float y) {
     return abs(x - y) < EPSILON;

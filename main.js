@@ -139,6 +139,8 @@ canvasElement.style.top = "0px";
 canvasElement.style.left = "0px";
 canvasElement.style.position="absolute";
 
+//var context = canvasElement.getContext("webgl2", {preserveDrawingBuffer: true});
+
 const onWindowResize = () => {
     /*// Update sizes
     sizes.width = window.innerWidth
@@ -192,7 +194,7 @@ const tick = () => {
         renderer.setRenderTarget(null)
         //Render to screen
         renderer.render(scene, camera);
-        console.log("ren")
+        
       }
 
       // Ping-pong the framebuffers by swapping them
@@ -212,18 +214,35 @@ const tick = () => {
     /*setTimeout(
     ()=>{window.requestAnimationFrame(tick)}
     , 2000)*/
+    /*var imgd = context.getImageData(cursorX, cursorY, 1, 1);
+    var pix = imgd.data;
+    console.log(pix)*/
+
+    /*var ctx = context
+    const pixels = new Uint8Array(1 * 1 * 4);
+    ctx.readPixels(0,0, 1, 1, ctx.RGBA, ctx.UNSIGNED_BYTE, pixels)
+    document.getElementById("colorDisp").innerHTML = pixels[0].toString() + " " + pixels[1].toString() + " " + pixels[2].toString() + " " + (pixels[3]).toString();
+*/
     window.requestAnimationFrame(tick)
 
+
+    // w/h: width/height of the region to read
+    // x/y: bottom-left corner of that region
+    
 }
 
 tick()
 
 /* CONTROLS */
+var cursorX = 0;
+var cursorY = 0;
 document.addEventListener('mousemove', function(event) {
     bufferMaterial.uniforms.brushPos.value = new THREE.Vector2(event.clientX * sizes.width/window.innerWidth,sizes.height - event.clientY*sizes.height/window.innerHeight);
+    cursorX = event.clientX;
+    cursorY = /*window.innerHeight - */event.clientY;
 });
 
-var brushScale = 10;
+var brushScale = 1;
 renderer.domElement.addEventListener('mousedown', function(event) {
     bufferMaterial.uniforms.brushScale.value = brushScale;
 });
@@ -318,6 +337,8 @@ var elements = [
   new THREE.Vector4(1.0,0.0,0.0,0.3), //WOOD
   new THREE.Vector4(0.1,0.0,0.0,0.4), //SMOKE
   new THREE.Vector4(0.09,0.0,0.3,0.5), //FLAME
+  new THREE.Vector4(0.25,0.0,0.0,0.6), //ACID
+  new THREE.Vector4(1.0,0.0,0.0,0.7), //IRON
 ]
 
 var elementColors = [
@@ -327,6 +348,8 @@ var elementColors = [
   new THREE.Vector4(139.0,90.0,43.0, 255.0), //WOOD
   new THREE.Vector4(100.0,100.0,100.0, 255.0), //SMOKE
   new THREE.Vector4(160.0,0.0,0.0, 255.0), //FLAME
+  new THREE.Vector4(0.0,128.0,0.0, 255.0), //ACID
+  new THREE.Vector4(50.0,50.0,50.0, 255.0) //IRON
 ]
 
 for (var i = 0; i < elements.length; i++) {

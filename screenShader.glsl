@@ -44,6 +44,12 @@ void main() {
       } else {
         gl_FragColor = vec4(226.0, 88.0, 34.0, 255.0)/255.0;
       }
+    } else if (near(color.w, ACID)) {
+      float mod = (color.w - ACID)/EPSILON;
+      gl_FragColor = vec4(0.0,128.0 + mod*50.0, 0.0, 255.0)/255.0;
+    } else if (near(color.w, IRON)) {
+      float mod = (color.w - IRON)/EPSILON;
+      gl_FragColor = vec4(50.0, 50.0, 50.0, 255.0)/255.0;
     }
 
     int depth = 16;
@@ -54,5 +60,7 @@ void main() {
       }
     }
     gl_FragColor /= sqrt(float(depth)/16.0) + 0.5;
+
+    gl_FragColor.w = color.w;
 
 }

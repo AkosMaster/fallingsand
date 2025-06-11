@@ -72,15 +72,16 @@ void swap(inout vec4 a, inout vec4 b)
       }
     }
 
-    // WATER
-    if (near(t01.w, WATER)) {
+    // WATER / ACID
+    if (near(t01.w, WATER) || near(t01.w, ACID)) {
       if (t00.x < t01.x) {
         swap(t00, t01);
-      } else if (t10.x < t01.x) {
-        swap(t10, t01);
+      
       } else if (near(t01.z, flip)) {
         if (t11.x < t01.x) {
           swap(t11, t01);
+        } else if (t10.x < t01.x) {
+          swap(t10, t01);
         } else {
           t01.z = 1.0 - t01.z;
         }
@@ -136,6 +137,15 @@ void swap(inout vec4 a, inout vec4 b)
         t00 = AIR_VEC;
       }
 
+    }
+
+    // ACID
+    if (near(t00.w, ACID)) {
+      if (!near(t11.w, ACID) && t11.w > EPSILON && !near(t11.w, IRON)) {
+        t11 = AIR_VEC;
+        t00 = SMOKE_VEC;
+        t00.w += (rand2-0.5) * EPSILON;
+      }
     }
   }
 
